@@ -1,10 +1,12 @@
 from dotenv import load_dotenv
+import requests
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain.agents import create_tool_calling_agent, AgentExecutor
+from tools_utils import meal_planner_tool
 
 # load environment variable file
 load_dotenv()
@@ -39,20 +41,25 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 ).partial(format_instructions=parser.get_format_instructions)
 
-
+tools = [meal_planner_tool]
 agent = create_tool_calling_agent(
     llm=llm,
     prompt=prompt,
-    tools=[]
+    tools=tools
 )
 
-agent_executor = AgentExecutor(agent=agent, tools=[], verbose=True)
-raw_response = agent_executor.invoke({"query": "I am 31 years old, 175 lbs, relatively active individual and I want to gain muscle weight. What should I incorporate into my diet?"})
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+# input from user
+query = input("Tell me about yourself")
+
+# Run the agent
+raw_response = agent_executor.invoke({"query": query})
 print(raw_response)
 
-
+# Try parsing into structured response
 try:
-    structured_response = parser.parse(raw_response.get("output")[0]["text"])
+    structured_response = parser.parse(raw_response.get("output"))
+    print(structured_response)
 except Exception as e: 
     print("Error parsing response", e, "Raw Response - ", raw_response)
 
