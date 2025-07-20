@@ -2,6 +2,7 @@ import streamlit as st
 from profiles import create_profile, get_notes, get_profile 
 from form_submit import update_personal_info, add_note, delete_note
 from db import personal_data_collection
+from agent_utils import ask_ai
 
 st.title("Personal Nutrition Tool")
 
@@ -60,7 +61,94 @@ def goals_form():
             else:
                 st.warning("Please select at least one goal.")
 
+def get_macros(profile, goals):
+    """
+    Placeholder for generating macros.
+    Replace with actual AI call or calculations later.
+    """
+    print("Profile:", profile)
+    print("Goals:", goals)
 
+    return {
+        "calories": 0,
+        "protein": 0,
+        "fat": 0,
+        "carbs": 0,
+    }
+
+@st.fragment()
+def macros():
+    profile = st.session_state.profile
+    nutrition = st.container(border=True)
+    nutrition.header("Macros")
+    if nutrition.button("Generate with AI"):
+        result = get_macros(profile.get("general"), profile.get("goals"))
+        profile["nutrition"] = result
+        nutrition.success("AI has generated the results.")
+    
+    with nutrition.form("nutrition_form", border=False):
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            calories = st.number_input("Calories", min_value=0, step=1, value=profile["nutrition"].get("calories", 0),)
+        with col2:
+            protein = st.number_input("Protein", min_value=0, step=1, value=profile["nutrition"].get("protein", 0),)
+        with col3:
+            fat = st.number_input("Fat", min_value=0, step=1, value=profile["nutrition"].get("fat", 0),)
+        with col4:
+            carbs = st.number_input("Carbs", min_value=0, step=1, value=profile["nutrition"].get("carbs", 0),)
+
+        if st.form_submit_button("Save"):
+            with st.spinner():
+                st.session_state.profile = update_personal_info(profile, "nutrition", 
+                                                                    protein=protein, 
+                                                                    calories=calories,
+                                                                    fat=fat,
+                                                                    carbs=carbs
+                                                                    )
+                st.success("Information saved ")
+
+
+@st.fragment()
+def notes():
+    st.subheader("Notes: ")
+    for i, note in enumerate(st.session_state.notes):
+        cols = st.columns([5,1])
+        with cols[0]:
+            st.text(note.get("text"))
+        with cols[1]:
+            if st.button("Delete", key=i):
+                delete_note(note.get("_id"))
+                st.session_state.notes.pop(i)
+                st.rerun()
+
+    new_note = st.text_input("Add a new note: ")
+    if st.button("Add Note"):
+        if new_note:
+            note = add_note(new_note, st.session_state.profile_id)
+            st.session_state.notes.append(note)
+            st.rerun()
+
+
+
+@st.fragment()
+def ask_ai_func():
+    st.subheader('Ask the AI Nutritionist')
+    user_question = st.text_input("Ask AI a question: ")
+    if st.button("Ask AI"):
+        with st.spinner():
+            result = ask_ai(st.session_state.profile["general"], user_question)
+            st.write(result)
+
+            if isinstance(result, dict) and "error" in result:
+                st.error(f"Agent Failed: {result['error']}")
+                st.write("Raw Output:", result["raw_output"])
+            else:
+                st.success("Feedback from your Nutritional Ai Agent:")
+                st.write("### Diet Plan", result.diet_plan)
+                st.write("### Summary", result.summary)
+                st.write("### Meal Recommendations", result.meal_recommendations)
+                st.write("### Foods to Focus on", ",".join(result.foods))
+                st.write("### Tools Used", ",".join(result.tools_used))
 
 
 
@@ -86,6 +174,9 @@ def forms():
 
     personal_data_form()
     goals_form()
+    macros()
+    notes()
+    ask_ai_func()
 
 
 if __name__ == "__main__":

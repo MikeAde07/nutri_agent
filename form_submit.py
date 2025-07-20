@@ -1,5 +1,5 @@
 from db import personal_data_collection, notes_collection
-from datetime import datetime
+from datetime import datetime, timezone
 
 def update_personal_info(existing, update_type, **kwargs):
     if update_type == "goals":
@@ -19,8 +19,8 @@ def add_note(note, profile_id):
     new_note = {
         "user_id": profile_id, 
         "text": note,
-        "$vectorize": note, 
-        "metadata": {"injested": datetime.now()},
+        #"$vectorize": note, 
+        "metadata": {"injested": datetime.now(timezone.utc)},
     }
     result = notes_collection.insert_one(new_note)
     new_note["_id"] = result.inserted_id

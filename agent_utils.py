@@ -50,17 +50,25 @@ agent = create_tool_calling_agent(
 
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 # input from user
-query = input("Tell me about yourself")
+#query = input("Tell me about yourself")
 
 # Run the agent
-raw_response = agent_executor.invoke({"query": query})
-print(raw_response)
+#raw_response = agent_executor.invoke({"query": query})
+#print(raw_response)
+
+def ask_ai(profile: dict, question: str):
+    profile_string ="\n".join([f"{k}: {v}" for k,v in profile.items()])
+    full_query = f"My profile:\n{profile_string}\n\nQuestion:\n{question}"
+
+    raw_response = agent_executor.invoke({"query": full_query})
 
 # Try parsing into structured response
-try:
-    structured_response = parser.parse(raw_response.get("output"))
-    print(structured_response)
-except Exception as e: 
-    print("Error parsing response", e, "Raw Response - ", raw_response)
+    try:
+        #structured_response = parser.parse(raw_response.get("output"))
+        return parser.parse(raw_response.get("output"))
+        #print(structured_response)
+    except Exception as e: 
+        return {"Error": str(e), "raw_output": raw_response.get("output")}
+        #print("Error parsing response", e, "Raw Response - ", raw_response)
 
 
