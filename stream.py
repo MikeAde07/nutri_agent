@@ -136,8 +136,17 @@ def ask_ai_func():
     user_question = st.text_input("Ask AI a question: ")
     if st.button("Ask AI"):
         with st.spinner():
-            result = ask_ai(st.session_state.profile["general"], user_question)
-            st.write(result)
+            profile = st.session_state.profile
+            
+            #st.write(result)
+
+            #combine general info + goals into one dict for the agent
+            profile_input = {
+                **profile["general"],
+                "goals": profile.get("goals", [])
+            }
+
+            result = ask_ai(profile_input, user_question)
 
             if isinstance(result, dict) and "error" in result:
                 st.error(f"Agent Failed: {result['error']}")
