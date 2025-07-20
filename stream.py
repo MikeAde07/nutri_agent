@@ -111,27 +111,34 @@ def macros():
 @st.fragment()
 def notes():
     st.subheader("Notes: ")
+    user_notes = st.session_state.notes
+
     for i, note in enumerate(st.session_state.notes):
         cols = st.columns([5,1])
         with cols[0]:
             st.text(note.get("text"))
         with cols[1]:
-            if st.button("Delete", key=i):
+            note_id = note.get("_id", i)
+            if st.button("Delete", key=f"delete-{note_id}"):
                 delete_note(note.get("_id"))
                 st.session_state.notes.pop(i)
                 st.rerun()
 
-    new_note = st.text_input("Add a new note: ")
-    if st.button("Add Note"):
+    #unique key using profile id
+    profile_id = st.session_state.profile_id
+    new_note = st.text_input("Add a new note: ", key=f"new-note-input-{profile_id}")
+
+    if st.button("Add Note", key=f"add-note-button-{profile_id}"):
         if new_note:
             note = add_note(new_note, st.session_state.profile_id)
             st.session_state.notes.append(note)
             st.rerun()
 
+    return user_notes
 
 
 @st.fragment()
-def ask_ai_func():
+def ask_ai_func(user_notes=None):
     st.subheader('Ask the AI Nutritionist')
     user_question = st.text_input("Ask AI a question: ")
     if st.button("Ask AI"):
@@ -143,7 +150,8 @@ def ask_ai_func():
             #combine general info + goals into one dict for the agent
             profile_input = {
                 **profile["general"],
-                "goals": profile.get("goals", [])
+                "goals": profile.get("goals", []),
+                "notes": [note["text"] for note in user_notes] if user_notes else []
             }
 
             result = ask_ai(profile_input, user_question)
@@ -184,8 +192,9 @@ def forms():
     personal_data_form()
     goals_form()
     macros()
-    notes()
-    ask_ai_func()
+    #notes()
+    user_notes = notes()
+    ask_ai_func(user_notes=user_notes)
 
 
 if __name__ == "__main__":
