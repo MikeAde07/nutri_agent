@@ -148,8 +148,6 @@ def ask_ai_func(user_notes=None):
     if st.button("Ask AI"):
         with st.spinner():
             profile = st.session_state.profile
-            
-            #st.write(result)
 
             #combine general info + goals into one dict for the agent
             profile_input = {
