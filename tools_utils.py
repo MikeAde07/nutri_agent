@@ -2,7 +2,6 @@ import os
 import requests
 from langchain.agents import Tool
 from langchain.tools import tool
-#from tools.spoonacular_tool import get_meal_plan
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain_openai import OpenAI
@@ -19,45 +18,11 @@ class ProfileInput(BaseModel):
     goals: list[str]
 
 
-
-
 load_dotenv()
 
-#llm = OpenAI(temperature=0)
-@tool
-def get_meal_plan(input:str):
-    """Uses spoonacular api functionality to provide meal plans due to users needs and dietary preferences and nutritonal breakdowns"""
-    #macros=input["macros"],
-    #diet=input.get("diet",""),
-    #exclude=input.get("exclude", ""),
-    #api_key=input["api_key"]
-    estimated_calories = 3000
 
-    api_key = os.getenv("SPOONACULAR_API_KEY")
 
-    url="https://api.spoonacular.com/mealplanner/generate"
-    params={
-        "timeFrame": "day",
-        #"diet": diet,
-        #"exclude": exclude,
-        #"targetCalories": macros.get("calories", 2000),
-        "targetCalories": estimated_calories,
-        "apiKey": api_key
-    }
-
-    response = requests.get(url, params=params)
-    return response.json()
-
-meal_planner_tool = Tool(
-    name="Spoonacular",
-    func=get_meal_plan,
-    description="Generates a meal plan based on macros, weight, goal, and user preferences"
-)
-
-@tool
-def calorie_calculator_tool(profile: ProfileInput) -> dict:
-    """Estimate daily calories and macro targets based on user stats and fitness goal."""
-
+def calculate_calories(profile: ProfileInput) -> dict:
     weight_kg = profile.weight_kg 
     height_cm = profile.height_cm 
     age = profile.age 
@@ -122,6 +87,38 @@ def calorie_calculator_tool(profile: ProfileInput) -> dict:
         "carbs": carb_grams,
     }
 
+
+
+@tool
+def calorie_calculator_tool(profile: ProfileInput) -> dict:
+    """Estimate daily calories and macro targets based on user stats and fitness goals"""
+    return calculate_calories(profile)
+
+@tool
+def get_meal_plan(profile: ProfileInput):
+    """Uses spoonacular api functionality to provide meal plans due to users needs and dietary preferences and nutritonal breakdowns"""
+   
+    calorie_data = calculate_calories(profile)
+    estimated_calories = calorie_data["calories"]
+
+    api_key = os.getenv("SPOONACULAR_API_KEY")
+
+    url="https://api.spoonacular.com/mealplanner/generate"
+
+    params={
+        "timeFrame": "day",
+        "targetCalories": estimated_calories,
+        "apiKey": api_key
+    }
+
+    response = requests.get(url, params=params)
+
+    data = response.json()
+
+    return {
+        "estimated_calories": estimated_calories,
+        "meal_plan": data.get("meals",[]),
+        "nutrients": data.get("nutrients", {})}
 
 
 
