@@ -6,7 +6,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain.agents import create_tool_calling_agent, AgentExecutor
-from tools_utils import meal_planner_tool
+from tools_utils import meal_planner_tool, calorie_calculator_tool
 
 # load environment variable file
 load_dotenv()
@@ -41,7 +41,7 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 ).partial(format_instructions=parser.get_format_instructions)
 
-tools = [meal_planner_tool]
+tools = [meal_planner_tool, calorie_calculator_tool]
 agent = create_tool_calling_agent(
     llm=llm,
     prompt=prompt,

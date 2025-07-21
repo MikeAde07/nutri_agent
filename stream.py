@@ -3,6 +3,7 @@ from profiles import create_profile, get_notes, get_profile
 from form_submit import update_personal_info, add_note, delete_note
 from db import personal_data_collection
 from agent_utils import ask_ai
+from tools_utils import calorie_calculator_tool
 
 st.title("Personal Nutrition Tool")
 
@@ -66,15 +67,18 @@ def get_macros(profile, goals):
     Placeholder for generating macros.
     Replace with actual AI call or calculations later.
     """
-    print("Profile:", profile)
-    print("Goals:", goals)
+    goal = goals[0] if goals else "general fitness"
 
-    return {
-        "calories": 0,
-        "protein": 0,
-        "fat": 0,
-        "carbs": 0,
-    }
+    result = calorie_calculator_tool(
+        weight_kg=profile["weight"],
+        height_cm=profile["height"],
+        age=profile["age"],
+        gender=profile["gender"],
+        goal=goal
+    )
+
+    return calorie_calculator_tool(profile, goals)
+    
 
 @st.fragment()
 def macros():
@@ -149,7 +153,10 @@ def ask_ai_func(user_notes=None):
 
             #combine general info + goals into one dict for the agent
             profile_input = {
-                **profile["general"],
+                "weight_kg": profile["general"]["weight"],
+                "height_cm": profile["general"]["height"],
+                "age": profile["general"]["age"],
+                "activity_level": profile["general"]["activity_level"],
                 "goals": profile.get("goals", []),
                 "notes": [note["text"] for note in user_notes] if user_notes else []
             }
