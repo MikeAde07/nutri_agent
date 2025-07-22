@@ -49,3 +49,9 @@
 | calorie_calculator_tool      |    Calculates users caloric intake/needs based on goals (muscle gain,  Fat Loss, Stay Active) |
 |identify_food_image| Food identification based off of images uploaded by users|
 |nutrition_from_food| provides nutritional information from food classification of image provided by user|
+
+
+## Photos
+- available in Assets folder (goals, image_food_classification, meal_recommendations, notes_feedback, personal info)
+
+
