@@ -3,7 +3,7 @@ from profiles import create_profile, get_notes, get_profile
 from form_submit import update_personal_info, add_note, delete_note
 from db import personal_data_collection
 from agent_utils import ask_ai
-from tools_utils import calorie_calculator_tool
+from tools_utils import calorie_calculator_tool, identify_food_image, nutrition_from_food
 
 st.title("Personal Nutrition Tool")
 
@@ -140,6 +140,34 @@ def notes():
 
     return user_notes
 
+@st.fragment()
+def food_image_uploader():
+    st.header("Image-Based Food Recognition")
+    uploaded_file = st.file_uploader("Upload a food photo (jpg, png, jpeg)", type=["jpg","jpeg","png"])
+
+    if uploaded_file:
+        with open("temp_uploaded_image.jpg", "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        st.image("temp_uploaded_image.jpg", caption="Uploaded Image", use_column_width=True)
+
+        if st.button("Analyze Image"):
+            with st.spinner("Identifying food..."):
+                food_name = identify_food_image("temp_uploaded_image.jpg")
+                st.success("Food Analyzed!")
+                st.write("### Food:", food_name)
+
+                with st.spinner("Downloading nutritional info..."):
+                    nutrition_result = nutrition_from_food(food_name)
+
+                if "error" in nutrition_result:
+                    st.error(nutrition_result["error"])
+                else:
+                    st.write("### Nutrition Facts")
+                    st.write(f"**Calories:** {nutrition_result['nutrition'].get('calories', 'N/A')}" )
+                    st.write(f"**Protein:** {nutrition_result['nutrition'].get('protein', 'N/A')}" )
+                    st.write(f"**Fat:** {nutrition_result['nutrition'].get('fat', 'N/A')}" )
+                    st.write(f"**Carbs:** {nutrition_result['nutrition'].get('carbs', 'N/A')}" )
+
 
 @st.fragment()
 def ask_ai_func(user_notes=None):
@@ -200,6 +228,7 @@ def forms():
     #notes()
     user_notes = notes()
     ask_ai_func(user_notes=user_notes)
+    food_image_uploader()
 
 
 if __name__ == "__main__":

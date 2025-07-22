@@ -8,6 +8,7 @@ from langchain_openai import OpenAI
 from typing import Literal
 from pydantic import BaseModel
 from dotenv import load_dotenv
+import replicate
 
 class ProfileInput(BaseModel):
     weight_kg: float
@@ -120,6 +121,57 @@ def get_meal_plan(profile: ProfileInput):
         "meal_plan": data.get("meals",[]),
         "nutrients": data.get("nutrients", {})}
 
+@tool 
+def identify_food_image(image_path: str) -> str:
+    """Identifies food in an image using MiniGPT-4. Returns a description."""
+    try:
+        output = replicate.run(
+            "daanelson/minigpt-4:e447a8583cffd86ce3b93f9c2cd24f2eae603d99ace6afa94b33a08e94a3cd06",
+            input={"image": open(image_path, "rb"), 
+                   "prompt":"What food is in this image?",
+                   "top_p": 0.9,
+                   "num_beams": 5,
+                   "max_length": 4000,
+                   "temperature": 1.32,
+                   "max_new_tokens": 3000,
+                   "repetition_penalty": 1
+                   }
+        )
+        return output.strip()
+    except Exception as e:
+        return f"Error identifying food: {e}"
+    
+
+@tool
+def nutrition_from_food(food_name: str) -> dict:
+    """Takes a food name, searches spoonacular, and returns nutrition information."""
+    try:
+        api_key = os.getenv("SPOONACULAR_API_KEY")
+        search_url = "https://api.spoonacular.com/recipes/complexSearch"
+        search_params = {
+            "query": food_name,
+            "number": 1,
+            "apikey": api_key
+        }
+        search_response = requests.get(search_url, params=search_params)
+        search_data = search_response.json()
+
+        if not search_data.get("results"):
+            return {"error": f"No results found for '{food_name}'"}
+        
+        recipe_id = search_data["results"][0]["id"]
+        nutrition_url = f"https://api.spoonacular.com/recipes/{recipe_id}/nutritionWidget.json"
+        nutrition_params = {"apiKey": api_key}
+        nutrition_response = requests.get(nutrition_url, params=nutrition_params)
+        nutrition_data = nutrition_response.json()
+
+        return {
+            "food_name": food_name,
+            "recipe_id": recipe_id,
+            "nutrition": nutrition_data
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 
 
