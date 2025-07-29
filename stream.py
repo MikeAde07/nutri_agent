@@ -3,7 +3,7 @@ from profiles import create_profile, get_notes, get_profile
 from form_submit import update_personal_info, add_note, delete_note
 from db import personal_data_collection
 from agent_utils import ask_ai
-from tools_utils import calorie_calculator_tool, identify_food_image, nutrition_from_food
+from tools_utils import calorie_calculator_tool, identify_food_image, nutrition_from_food, extract_food_keyword
 
 st.title("Personal Nutrition Tool")
 
@@ -156,8 +156,13 @@ def food_image_uploader():
                 st.success("Food Analyzed!")
                 st.write("### Food:", food_name)
 
+                #Extract main food keyword
+                keyword = extract_food_keyword(food_name)
+                st.write("**Key Food**:", keyword)
+
+                #Get nutrition data from keyword
                 with st.spinner("Downloading nutritional info..."):
-                    nutrition_result = nutrition_from_food(food_name)
+                    nutrition_result = nutrition_from_food(keyword)
 
                 if "error" in nutrition_result:
                     st.error(nutrition_result["error"])
@@ -194,11 +199,11 @@ def ask_ai_func(user_notes=None):
                 st.write("Raw Output:", result["raw_output"])
             else:
                 st.success("Feedback from your Nutritional Ai Agent:")
-                st.write("### Diet Plan", result.diet_plan)
-                st.write("### Summary", result.summary)
-                st.write("### Meal Recommendations", result.meal_recommendations)
-                st.write("### Foods to Focus on", ",".join(result.foods))
-                st.write("### Tools Used", ",".join(result.tools_used))
+                st.write("### Diet Plan:", result.diet_plan)
+                st.write("### Summary:", result.summary)
+                st.write("### Meal Recommendations:", result.meal_recommendations)
+                st.write("### Foods to Focus on:", ",".join(result.foods))
+                st.write("### Tools Used:", ",".join(result.tools_used))
 
 
 

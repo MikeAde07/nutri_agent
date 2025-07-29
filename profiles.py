@@ -30,6 +30,7 @@ def create_profile(_id):
 
 # reference to this can be found in data stacks documentation. we have our id field and we're looking for any ids that equal that id.
 def get_profile(_id):
+    #print("DEBUG: Fetching profile for ID:", _id)
     return personal_data_collection.find_one({"_id": {"$eq": _id}})
 
 #match user_id to _id. Allows us to get notes associated with profile. 

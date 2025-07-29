@@ -151,10 +151,16 @@ def nutrition_from_food(food_name: str) -> dict:
         search_params = {
             "query": food_name,
             "number": 1,
-            "apikey": api_key
+            "apiKey": api_key
         }
         search_response = requests.get(search_url, params=search_params)
         search_data = search_response.json()
+
+        #Retry with lowercase if no results
+        if not search_data.get("results"):
+            search_params["query"] = food_name.lower()
+            search_response = requests.get(search_url, params=search_params)
+            search_data = search_response.json()
 
         if not search_data.get("results"):
             return {"error": f"No results found for '{food_name}'"}
@@ -173,5 +179,28 @@ def nutrition_from_food(food_name: str) -> dict:
     except Exception as e:
         return {"error": str(e)}
 
+
+@tool
+def extract_food_keyword(description: str) -> str:
+    """Uses OpenAI to extract the main food keyword from a long image description."""
+    try:
+        llm = OpenAI(temperature=0.2)
+        prompt = PromptTemplate(
+            input_variables=["description"],
+            template=(
+                "Extract the most likely **search term** for a food from this sentence.\n"
+                "Keep it simple: 1-3 words max.\n"
+                "Avoid details like toppings or ingredients.\n"
+                "Use lowercase only.\n\n"
+                "Sentence: {description}\n"
+                "Search Term:"
+            )
+            )
+        chain = LLMChain(llm=llm, prompt=prompt)
+        result = chain.run(description)
+        #remove whitespaces and quotations
+        return result.strip().strip('"').strip("'")
+    except Exception as e:
+        return f"Error extracting food keyword: {e}"
 
 
