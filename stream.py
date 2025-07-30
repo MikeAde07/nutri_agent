@@ -184,6 +184,7 @@ def ask_ai_func(user_notes=None):
 
             #combine general info + goals into one dict for the agent
             profile_input = {
+                "id": st.session_state.profile_id,
                 "weight_kg": profile["general"]["weight"],
                 "height_cm": profile["general"]["height"],
                 "age": profile["general"]["age"],

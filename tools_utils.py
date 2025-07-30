@@ -8,9 +8,11 @@ from langchain_openai import OpenAI
 from typing import Literal
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from datetime import datetime
 import replicate
 
 class ProfileInput(BaseModel):
+    id: int
     weight_kg: float
     height_cm: float
     age: int
@@ -202,5 +204,54 @@ def extract_food_keyword(description: str) -> str:
         return result.strip().strip('"').strip("'")
     except Exception as e:
         return f"Error extracting food keyword: {e}"
+    
+@tool
+def get_meal_week(profile: ProfileInput):
+    """Uses spoonacular api functionality to provide weekly meal plans due to users needs and dietary preferences and nutritonal breakdowns"""
+    try:
+        calorie_data = calculate_calories(profile)
+        estimated_calories = calorie_data["calories"]
+        profile_id = profile.id
+        start_date = datetime.today().strftime('%Y-%m-%d')
+
+        api_key = os.getenv("SPOONACULAR_API_KEY")
+        if not api_key:
+            return {"error": "Missing Spoonacular API key."}
+
+        url=f"https://api.spoonacular.com/mealplanner/{profile_id}/week/{start_date}"
+
+        params={
+            #"username": profile_id,
+            "targetCalories": estimated_calories,
+            #"start-date": start_date,
+            "apiKey": api_key
+        }
+
+        response = requests.get(url, params=params)
+
+        # Check for bad HTTP status before calling .json()
+        if response.status_code != 200:
+            return{
+                "error": f"API call failed with status code {response.status_code}",
+                "text": response.text
+            }
+
+        try:
+            data = response.json()
+        except Exception as e:
+            return {
+                "error": f"JSON parsing failed: {e}",
+                "raw__response": response.text
+            }
+
+        return {
+            "estimated_calories": estimated_calories,
+            "meal_plan": data.get("week",{}),
+            #"nutrients": data.get("nutrients", {})
+            #"week_plan": data
+            }
+
+    except Exception as e:
+        return {"error": f"Exception in get_meal_week: {str(e)}"}
 
 

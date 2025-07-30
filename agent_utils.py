@@ -6,7 +6,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain.agents import create_tool_calling_agent, AgentExecutor
-from tools_utils import get_meal_plan, calorie_calculator_tool, identify_food_image, nutrition_from_food, extract_food_keyword
+from tools_utils import get_meal_plan, calorie_calculator_tool, identify_food_image, nutrition_from_food, extract_food_keyword, get_meal_week
 
 # load environment variable file
 load_dotenv()
@@ -32,6 +32,11 @@ prompt = ChatPromptTemplate.from_messages(
             You are an award winning exercise nutrionist that will offer expert nutritional advice to users based on their age, weight, activity levels, goals and dietary/cultural preferences. 
             Examples of advice would be but not limited too, meal plans, key nutrients, macros intake and levels, healthy snacks, eating habits/frequencies and how many times to eat during the day. 
             Answer the user query and use necessary tools. 
+
+            Use the appropriate tools to generate outputs:
+            - Use 'get_meal_plan' for 1-day meal plans
+            - Use 'get_meal_week' for 5-to 7-day meal plans (weekly plans)
+
             Wrap the output in this format and provide no other text\n{format_instructions}
             """,
         ),
@@ -41,7 +46,7 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 ).partial(format_instructions=parser.get_format_instructions)
 
-tools = [get_meal_plan, calorie_calculator_tool, identify_food_image, extract_food_keyword, nutrition_from_food]
+tools = [get_meal_plan, calorie_calculator_tool, identify_food_image, extract_food_keyword, nutrition_from_food, get_meal_week]
 agent = create_tool_calling_agent(
     llm=llm,
     prompt=prompt,
@@ -49,12 +54,7 @@ agent = create_tool_calling_agent(
 )
 
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-# input from user
-#query = input("Tell me about yourself")
 
-# Run the agent
-#raw_response = agent_executor.invoke({"query": query})
-#print(raw_response)
 
 def ask_ai(profile: dict, question: str):
     profile_string ="\n".join([f"{k}: {v}" for k,v in profile.items()])
@@ -64,11 +64,11 @@ def ask_ai(profile: dict, question: str):
 
 # Try parsing into structured response
     try:
-        #structured_response = parser.parse(raw_response.get("output"))
+        
         return parser.parse(raw_response.get("output"))
-        #print(structured_response)
+        
     except Exception as e: 
         return {"Error": str(e), "raw_output": raw_response.get("output")}
-        #print("Error parsing response", e, "Raw Response - ", raw_response)
+        
 
 
