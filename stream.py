@@ -7,6 +7,21 @@ from tools_utils import calorie_calculator_tool, identify_food_image, nutrition_
 
 st.title("Personal Nutrition Tool")
 
+st.subheader("Choose a Persona (Optional)")
+selected_persona = None
+
+cols = st.columns(3)
+with cols[0]:
+    if st.button("🧔🏽 Busy Parent"):
+        selected_persona = "Busy Parent"
+
+with cols[1]:
+    if st.button("👩🏽‍🎓 College Student"):
+        selected_persona = "College Student"
+
+with cols[2]:
+    if st.button("🏋🏽 Fitness Enthusiast"):
+        selected_persona = "Fitness Enthusiast"
 
 @st.fragment()
 def personal_data_form():
@@ -44,6 +59,8 @@ def personal_data_form():
                     #st.write("Updated profile from DB:", updated_profile)
             else:
                 st.warning('Please fill in all of the data!')
+
+        
 
 @st.fragment()
 def goals_form():

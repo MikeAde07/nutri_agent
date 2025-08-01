@@ -218,7 +218,7 @@ def get_meal_week(profile: ProfileInput):
         if not api_key:
             return {"error": "Missing Spoonacular API key."}
 
-        url=f"https://api.spoonacular.com/mealplanner/{profile_id}/week/{start_date}"
+        url=f"https://api.spoonacular.com/mealplanner/{profile}/week/{start_date}"
 
         params={
             #"username": profile_id,
